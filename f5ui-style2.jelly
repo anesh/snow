@@ -1,0 +1,154 @@
+<j:jelly xmlns:j="jelly:core" xmlns:j2="jelly:html">
+  <j2:style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f5f7fa;
+      padding: 40px;
+    }
+
+    .container {
+      background-color: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      padding: 30px;
+      max-width: 900px;
+      margin: auto;
+    }
+
+    h2 {
+      font-size: 22px;
+      font-weight: 600;
+      margin-bottom: 20px;
+      color: #2c3e50;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+
+    th, td {
+      padding: 12px 16px;
+      border-bottom: 1px solid #ddd;
+    }
+
+    th {
+      background-color: #f0f2f5;
+      font-weight: 600;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 8px 10px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+
+    .btn {
+      border: none;
+      padding: 10px 16px;
+      font-size: 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      margin: 10px 5px 0 0;
+    }
+
+    .btn-add {
+      background-color: #007bff;
+      color: white;
+    }
+
+    .btn-submit {
+      background-color: #28a745;
+      color: white;
+    }
+
+    .btn-delete {
+      background-color: #dc3545;
+      color: white;
+    }
+
+    #result {
+      margin-top: 20px;
+      font-size: 14px;
+      color: #333;
+      background: #f1f8ff;
+      padding: 12px;
+      border-radius: 8px;
+      border-left: 4px solid #007bff;
+    }
+  </j2:style>
+
+  <j2:script>
+    function addRow() {
+      var table = document.getElementById("f5Table").getElementsByTagName('tbody')[0];
+      var row = table.insertRow();
+      
+      var poolCell = row.insertCell(0);
+      poolCell.innerHTML = '<input type="text" name="pool_name" class="form-control" />';
+
+      var ipCell = row.insertCell(1);
+      ipCell.innerHTML = '<input type="text" name="member_ip" class="form-control" />';
+
+      var portCell = row.insertCell(2);
+      portCell.innerHTML = '<input type="text" name="member_port" class="form-control" />';
+
+      var actionCell = row.insertCell(3);
+      actionCell.innerHTML = '<button class="btn btn-delete" onclick="deleteRow(this)">Delete</button>';
+    }
+
+    function deleteRow(btn) {
+      var row = btn.parentNode.parentNode;
+      row.parentNode.removeChild(row);
+    }
+
+    function submitF5Config() {
+      var table = document.getElementById("f5Table");
+      var rows = table.getElementsByTagName("tbody")[0].getElementsByTagName("tr");
+      var data = [];
+
+      for (var i = 0; i < rows.length; i++) {
+        var inputs = rows[i].getElementsByTagName("input");
+        data.push({
+          pool_name: inputs[0].value,
+          member_ip: inputs[1].value,
+          member_port: inputs[2].value
+        });
+      }
+
+      var ga = new GlideAjax('F5ConfiguratorAjax');
+      ga.addParam('sysparm_name', 'configureMultiple');
+      ga.addParam('sysparm_data', JSON.stringify(data));
+      ga.getXMLAnswer(function(response) {
+        document.getElementById("result").innerHTML = response;
+      });
+    }
+  </j2:script>
+
+  <div class="container">
+    <h2>F5 Load Balancer Configuration</h2>
+
+    <button onclick="addRow()" class="btn btn-add">+ Add Row</button>
+
+    <table id="f5Table">
+      <thead>
+        <tr>
+          <th>Pool Name</th>
+          <th>Member IP</th>
+          <th>Member Port</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Rows will be added here -->
+      </tbody>
+    </table>
+
+    <button onclick="submitF5Config()" class="btn btn-submit">Submit to F5</button>
+
+    <div id="result"></div>
+  </div>
+</j:jelly>
+

@@ -78,5 +78,14 @@
     border-radius: 8px;
     border-left: 4px solid #007bff;
   }
+  .f5-configurator select {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 14px;
+  margin-top: 4px;
+  background-color: #fff;
+}
 </j2:style>
 

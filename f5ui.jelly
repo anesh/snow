@@ -1,0 +1,134 @@
+<jelly xmlns="jelly:core" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <html>
+    <head>
+      <style>
+        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        th, td { padding: 8px; text-align: left; border: 1px solid #ddd; }
+        input, select { padding: 8px; width: 100%; }
+        button { padding: 10px 15px; background-color: #4CAF50; color: white; border: none; cursor: pointer; }
+        button:hover { background-color: #45a049; }
+        .form-section { margin-bottom: 20px; }
+      </style>
+      <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+      <script type="text/javascript">
+        // JavaScript function to simulate saving the F5 configuration
+        function saveF5Config() {
+          var poolName = $('#poolName').val();
+          var virtualServerIp = $('#virtualServerIp').val();
+          var protocol = $('#protocol').val();
+          var port = $('#port').val();
+          var servers = [];
+          
+          $('#serverTable tr').each(function() {
+            var serverName = $(this).find('input[name="serverName"]').val();
+            var serverIp = $(this).find('input[name="serverIp"]').val();
+            var serverStatus = $(this).find('select[name="serverStatus"]').val();
+            if (serverName && serverIp && serverStatus) {
+              servers.push({ name: serverName, ip: serverIp, status: serverStatus });
+            }
+          });
+
+          // Simulating an AJAX call to save the configuration
+          console.log('F5 Config Data:', {
+            poolName: poolName,
+            virtualServerIp: virtualServerIp,
+            protocol: protocol,
+            port: port,
+            servers: servers
+          });
+
+          // Optionally send the data to F5 (you would replace this with actual REST API call)
+          var ga = new GlideAjax('F5LoadBalancerConfig');
+          ga.addParam('poolName', poolName);
+          ga.addParam('virtualServerIp', virtualServerIp);
+          ga.addParam('protocol', protocol);
+          ga.addParam('port', port);
+          ga.addParam('servers', JSON.stringify(servers));
+          ga.getXMLAnswer(function(response) {
+            alert('F5 Load Balancer Configuration saved!');
+          });
+        }
+
+        // Function to add a new server to the table
+        function addServerRow() {
+          var rowCount = $('#serverTable tr').length;
+          var newRow = `<tr id="serverRow${rowCount}">
+                          <td><input type="text" name="serverName" placeholder="Server Name"></td>
+                          <td><input type="text" name="serverIp" placeholder="Server IP"></td>
+                          <td>
+                            <select name="serverStatus">
+                              <option value="enabled">Enabled</option>
+                              <option value="disabled">Disabled</option>
+                            </select>
+                          </td>
+                          <td><button onclick="deleteServerRow(${rowCount})">Delete</button></td>
+                        </tr>`;
+          $('#serverTable').append(newRow);
+        }
+
+        // Function to delete a server row from the table
+        function deleteServerRow(rowId) {
+          $('#serverRow' + rowId).remove();
+        }
+      </script>
+    </head>
+    <body>
+      <h2>F5 Load Balancer Configuration</h2>
+      
+      <div class="form-section">
+        <label for="poolName">Pool Name</label>
+        <input type="text" id="poolName" placeholder="Enter pool name">
+      </div>
+      
+      <div class="form-section">
+        <label for="virtualServerIp">Virtual Server IP</label>
+        <input type="text" id="virtualServerIp" placeholder="Enter virtual server IP">
+      </div>
+      
+      <div class="form-section">
+        <label for="protocol">Protocol</label>
+        <select id="protocol">
+          <option value="http">HTTP</option>
+          <option value="https">HTTPS</option>
+          <option value="tcp">TCP</option>
+        </select>
+      </div>
+      
+      <div class="form-section">
+        <label for="port">Port</label>
+        <input type="text" id="port" placeholder="Enter port number">
+      </div>
+      
+      <div class="form-section">
+        <h3>Servers</h3>
+        <table id="serverTable">
+          <thead>
+            <tr>
+              <th>Server Name</th>
+              <th>Server IP</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr id="serverRow0">
+              <td><input type="text" name="serverName" placeholder="Server Name"></td>
+              <td><input type="text" name="serverIp" placeholder="Server IP"></td>
+              <td>
+                <select name="serverStatus">
+                  <option value="enabled">Enabled</option>
+                  <option value="disabled">Disabled</option>
+                </select>
+              </td>
+              <td><button onclick="deleteServerRow(0)">Delete</button></td>
+            </tr>
+          </tbody>
+        </table>
+        <button onclick="addServerRow()">Add Server</button>
+      </div>
+
+      <button onclick="saveF5Config()">Save Configuration</button>
+    </body>
+  </html>
+</jelly>
+

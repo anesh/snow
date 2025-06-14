@@ -1,0 +1,63 @@
+<j:jelly xmlns:j="jelly:core" xmlns:g="glide" xmlns:j2="jelly:html">
+  <j2:script>
+    function addRow() {
+      var table = document.getElementById("f5Table");
+      var row = table.insertRow(-1);
+      var cols = ['pool_name', 'member_ip', 'member_port'];
+      for (var i = 0; i < cols.length; i++) {
+        var cell = row.insertCell(i);
+        var input = document.createElement("input");
+        input.name = cols[i];
+        input.type = "text";
+        input.className = "form-control";
+        cell.appendChild(input);
+      }
+      // Add delete button
+      var delCell = row.insertCell(cols.length);
+      var btn = document.createElement("button");
+      btn.innerHTML = "Delete";
+      btn.type = "button";
+      btn.className = "btn btn-danger";
+      btn.onclick = function () { table.deleteRow(row.rowIndex); };
+      delCell.appendChild(btn);
+    }
+
+    function submitF5Config() {
+      var table = document.getElementById("f5Table");
+      var rows = table.rows;
+      var data = [];
+      for (var i = 1; i < rows.length; i++) {
+        var inputs = rows[i].getElementsByTagName("input");
+        if (inputs.length === 3) {
+          data.push({
+            pool_name: inputs[0].value,
+            member_ip: inputs[1].value,
+            member_port: inputs[2].value
+          });
+        }
+      }
+
+      // Send to Script Include via GlideAjax
+      var ga = new GlideAjax('F5ConfiguratorAjax');
+      ga.addParam('sysparm_name', 'configureMultiple');
+      ga.addParam('sysparm_data', JSON.stringify(data));
+      ga.getXMLAnswer(function(response) {
+        document.getElementById("result").innerHTML = response;
+      });
+    }
+  </j2:script>
+
+  <j2:button onclick="addRow()" class="btn btn-primary">Add Row</j2:button>
+  <j2:table id="f5Table" class="table table-bordered">
+    <j2:tr>
+      <j2:th>Pool Name</j2:th>
+      <j2:th>Member IP</j2:th>
+      <j2:th>Member Port</j2:th>
+      <j2:th>Action</j2:th>
+    </j2:tr>
+  </j2:table>
+
+  <j2:button onclick="submitF5Config()" class="btn btn-success">Submit to F5</j2:button>
+  <div id="result"></div>
+</j:jelly>
+

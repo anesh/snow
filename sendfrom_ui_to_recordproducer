@@ -1,0 +1,96 @@
+Step 1: Add Output Variables to Your Record Producer
+Create catalog variables in the Record Producer that will hold values returned from the modal:
+
+f5_member_ip
+
+f5_member_port
+
+f5_health_monitor
+
+etc.
+
+Step 2: Update the UI Page with a Submit Button
+Add a Button:
+xml
+Copy
+Edit
+<button class="btn btn-primary" onclick="submitF5Modal()">Submit</button>
+
+Script to Collect Values and Return to Parent:
+
+<script>
+function submitF5Modal() {
+  var ip = document.getElementById('ip_input')?.value || '';
+  var port = document.getElementById('port_input')?.value || '';
+  var monitor = document.getElementById('monitor_select')?.value || '';
+
+  // Send data back to parent g_form
+  if (window.parent && window.parent.g_form) {
+    window.parent.g_form.setValue('f5_member_ip', ip);
+    window.parent.g_form.setValue('f5_member_port', port);
+    window.parent.g_form.setValue('f5_health_monitor', monitor);
+  }
+
+  // Close the modal
+  GlideModalWindow.get().destroy();
+}
+</script>
+
+for multirows
+Step 1: Add a Multi-line Text Variable to Record Producer
+
+Step 2: Modal UI Page — HTML + Table Inputs
+
+<script>
+function addRow() {
+  const tableBody = document.getElementById("table_body");
+
+  const row = document.createElement("tr");
+
+  row.innerHTML = `
+    <td><input type="text" class="ip_input" /></td>
+    <td><input type="text" class="port_input" /></td>
+    <td>
+      <select class="monitor_input">
+        <option value="">Select</option>
+        <option value="http">HTTP</option>
+        <option value="tcp">TCP</option>
+      </select>
+    </td>
+    <td><button onclick="this.closest('tr').remove()">Remove</button></td>
+  `;
+
+  tableBody.appendChild(row);
+}
+</script>
+
+Step 3: Submit Button — Collect and Return to Parent
+
+
+<script>
+function submitF5Modal() {
+  const rows = document.querySelectorAll('#table_body tr');
+  const members = [];
+
+  rows.forEach(row => {
+    const ip = row.querySelector('.ip_input')?.value.trim();
+    const port = row.querySelector('.port_input')?.value.trim();
+    const monitor = row.querySelector('.monitor_input')?.value.trim();
+
+    if (ip && port && monitor) {
+      members.push(`${ip}:${port} [${monitor}]`);
+    }
+  });
+
+  const formatted = members.join('\n'); // Multi-line text format
+
+  // Pass back to parent catalog variable
+  if (window.parent && window.parent.g_form) {
+    window.parent.g_form.setValue('f5_members', formatted);
+  }
+
+  // Close the modal
+  GlideModalWindow.get().destroy();
+}
+</script>
+

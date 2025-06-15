@@ -1,0 +1,56 @@
+Go to System UI → UI Macros, and create a new one called (for example) open_f5_modal_button.
+
+<j:jelly xmlns:j="jelly:core" xmlns:g="glide" xmlns:g2="jelly:glide">
+  <g:ui_form>
+    <button type="button" class="btn btn-primary" onclick="openF5Modal();">
+      Configure F5 Load Balancer
+    </button>
+  </g:ui_form>
+</j:jelly>
+
+
+Add the Macro to the Catalog Item
+Go to your Record Producer or Catalog Item, and add a "Macro" variable:
+
+Type: Macro
+
+Name: f5_modal_trigger
+
+Macro: open_f5_modal_button
+
+ Create the Catalog Client Script
+Type: onLoad
+function openF5Modal() {
+  var appName = g_form.getValue('application_name');
+  var env = g_form.getValue('environment');
+
+  var modal = new GlideModal('f5_ui_page'); // Name of your UI Page
+  modal.setTitle('F5 Load Balancer Configuration');
+  modal.setSize('large');
+
+  modal.setPreference('app_name', appName);
+  modal.setPreference('environment', env);
+
+  modal.render();
+}
+
+In Your UI Page (f5_ui_page), Read the Preferences
+
+<script>
+window.addEventListener('load', function () {
+  var app = gel('sysparm_app_name')?.value || '';
+  var env = gel('sysparm_environment')?.value || '';
+
+  document.getElementById('app_input').value = app;
+  document.getElementById('env_input').value = env;
+});
+</script>
+
+And in your Jelly HTML:
+<label>Application:</label>
+<input type="text" id="app_input" readonly />
+
+<label>Environment:</label>
+<input type="text" id="env_input" readonly />
+
+

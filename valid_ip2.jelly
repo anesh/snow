@@ -1,0 +1,39 @@
+newRow.innerHTML = `
+  <td>
+    <input type="text" name="member_ip" oninput="validateIP(this)" placeholder="192.168.0.1" />
+    <span class="ip-error" style="color: red; font-size: 0.9em; display: none;">Invalid IP</span>
+  </td>
+  ...
+`;
+
+
+<script>
+function validateIP(input) {
+  var ip = input.value.trim();
+  var errorSpan = input.parentElement.querySelector('.ip-error');
+
+  // Simple IPv4 pattern
+  var ipPattern = /^(25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)){3}$/;
+
+  if (ip === "") {
+    input.style.borderColor = "red";
+    if (errorSpan) {
+      errorSpan.textContent = "IP address is required";
+      errorSpan.style.display = "inline";
+    }
+  } else if (!ipPattern.test(ip)) {
+    input.style.borderColor = "red";
+    if (errorSpan) {
+      errorSpan.textContent = "Invalid IP address format";
+      errorSpan.style.display = "inline";
+    }
+  } else {
+    input.style.borderColor = "";
+    if (errorSpan) {
+      errorSpan.textContent = "";
+      errorSpan.style.display = "none";
+    }
+  }
+}
+</script>
+

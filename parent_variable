@@ -1,0 +1,17 @@
+Get a Variable from Parent Catalog Form
+
+<script>
+window.addEventListener('load', function () {
+  if (window.parent && window.parent.g_form) {
+    var serverName = window.parent.g_form.getValue('server_name');
+    console.log("Server Name:", serverName);
+
+    // Optionally set it in a field in your UI Page
+    var inputField = document.getElementById('server_name_field');
+    if (inputField) {
+      inputField.value = serverName;
+    }
+  }
+});
+</script>
+

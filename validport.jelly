@@ -1,0 +1,30 @@
+<td>
+  <input type="text" name="member_port" oninput="validatePort(this)" placeholder="e.g., 80" />
+  <span class="port-error" style="color: red; font-size: 0.9em; display: none;"></span>
+</td>
+
+
+<script>
+function validatePort(input) {
+  var port = input.value.trim();
+  var errorSpan = input.parentElement.querySelector('.port-error');
+
+  // Check if it's a number between 1 and 65535
+  var isValid = /^\d+$/.test(port) && parseInt(port) >= 1 && parseInt(port) <= 65535;
+
+  if (port === "") {
+    input.style.borderColor = "red";
+    errorSpan.textContent = "Port number is required";
+    errorSpan.style.display = "inline";
+  } else if (!isValid) {
+    input.style.borderColor = "red";
+    errorSpan.textContent = "Port must be a number between 1 and 65535";
+    errorSpan.style.display = "inline";
+  } else {
+    input.style.borderColor = "";
+    errorSpan.textContent = "";
+    errorSpan.style.display = "none";
+  }
+}
+</script>
+

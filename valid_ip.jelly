@@ -1,0 +1,35 @@
+<label for="member_ip">Member IP:</label>
+<input type="text" id="member_ip" name="member_ip"/>
+
+<script>
+  function isValidIp(ip) {
+    var regex = /^(25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)){3}$/;
+    return regex.test(ip);
+  }
+
+  function fillRecordProducer() {
+    var memberIp = document.getElementById("member_ip").value;
+
+    if (!isValidIp(memberIp)) {
+      alert("Invalid IP address. Please enter a valid IPv4 address (e.g. 192.168.0.1)");
+      return;
+    }
+
+    // Set variable if valid
+    window.parent.g_form.setValue('member_ip', memberIp);
+
+    // Close modal, etc.
+    if (window.parent.GlideModal) {
+      var modals = window.parent.document.querySelectorAll('.glide_modal');
+      modals.forEach(function(modal) {
+        if (modal.style.display !== 'none') {
+          var glideModal = window.parent.GlideModal.getModal(modal);
+          if (glideModal) glideModal.destroy();
+        }
+      });
+    } else {
+      window.parent.$j("#dialog_f5_form").dialog("close");
+    }
+  }
+</script>
+

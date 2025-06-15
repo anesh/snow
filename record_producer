@@ -1,0 +1,180 @@
+<j:jelly xmlns:j="jelly:core" xmlns:g="glide" xmlns:ui="jelly:com.glide.ui.tags">
+
+<script>
+  function fillRecordProducer() {
+    // Get values from UI Page form inputs
+    var virtualPort = document.getElementById("virtual_port").value;
+    var healthMonitor = document.getElementById("health_monitor").value;
+    var persistence = document.getElementById("persistence").value;
+
+    // Assign values to the Record Producer variables
+    // Parent window is the Record Producer form page
+    window.parent.g_form.setValue('virtual_port', virtualPort);
+    window.parent.g_form.setValue('health_monitor', healthMonitor);
+    window.parent.g_form.setValue('persistence', persistence);
+
+    // Optionally close the UI Page modal/dialog after setting variables
+    window.parent.$j("#dialog_f5_form").dialog("close");
+  }
+</script>
+
+<style>
+  /* Scoped styling so it doesn't affect rest of ServiceNow */
+  #f5_form_container {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    padding: 15px;
+    width: 350px;
+  }
+  #f5_form_container label {
+    font-weight: bold;
+    display: block;
+    margin-top: 10px;
+  }
+  #f5_form_container select, 
+  #f5_form_container input[type=text] {
+    width: 100%;
+    padding: 5px;
+  }
+  #submit_button {
+    margin-top: 15px;
+    width: 100%;
+    background-color: #007ACC;
+    color: white;
+    border: none;
+    padding: 10px;
+    cursor: pointer;
+  }
+  #submit_button:hover {
+    background-color: #005A9E;
+  }
+</style>
+
+<div id="f5_form_container">
+  <label for="virtual_port">Virtual Port:</label>
+  <input type="text" id="virtual_port" name="virtual_port"/>
+
+  <label for="health_monitor">Health Monitor:</label>
+  <select id="health_monitor" name="health_monitor">
+    <option value="http">HTTP</option>
+    <option value="https">HTTPS</option>
+    <option value="tcp">TCP</option>
+  </select>
+
+  <label for="persistence">Persistence:</label>
+  <select id="persistence" name="persistence">
+    <option value="none">None</option>
+    <option value="cookie">Cookie</option>
+    <option value="source_ip">Source IP</option>
+  </select>
+
+  <button id="submit_button" onclick="fillRecordProducer()">Submit</button>
+</div>
+
+
+Example Catalog Client Script (onLoad):
+javascript
+Copy
+Edit
+function openF5ConfigForm() {
+  var dialog = new GlideModal('f5_lb_config_form');
+  dialog.setTitle('Configure F5 Load Balancer');
+  dialog.render();
+}
+
+openF5ConfigForm();
+
+
+How it works:
+The UI Page Jelly form opens as a modal from the Record Producer.
+
+When you click Submit in the UI Page, it sets the Record Producer variables using g_form.setValue on the parent.
+
+Then close the modal.
+
+The user submits the Record Producer form, which creates the record with those values.
+
+
+How to implement blocking modal on Record Producer with UI Page
+Step 1: Modify your Catalog Client Script (onLoad) to:
+Open the modal on load
+
+Disable the Submit button on the Record Producer form initially
+
+Re-enable the Submit button only after the UI Page form successfully sets variables and closes the modal
+
+javascript
+Copy
+Edit
+function openF5ConfigForm() {
+  var dialog = new GlideModal('f5_lb_config_form');
+  dialog.setTitle('Configure F5 Load Balancer');
+
+  // Disable the Submit button on the Record Producer form
+  g_form.setSubmitButtonEnabled(false);
+
+  // Listen for modal close event to re-enable submit button
+  dialog.on('bodyclose', function() {
+    // Validate if required variables are filled
+    var vPort = g_form.getValue('virtual_port');
+    var hMonitor = g_form.getValue('health_monitor');
+    var persistence = g_form.getValue('persistence');
+
+    if (vPort && hMonitor && persistence) {
+      g_form.setSubmitButtonEnabled(true);
+    } else {
+      alert("Please complete the F5 Load Balancer configuration before submitting.");
+      // Re-open modal if data is missing
+      setTimeout(function() {
+        openF5ConfigForm();
+      }, 300);
+    }
+  });
+
+  dialog.render();
+}
+
+openF5ConfigForm();
+Step 2: Modify your UI Page's Submit button handler to close the modal after setting variables
+Your existing UI Page JavaScript function fillRecordProducer() already closes the modal like this:
+
+js
+Copy
+Edit
+window.parent.$j("#dialog_f5_form").dialog("close");
+But GlideModal doesn’t always use jQuery dialog, so better to use GlideModal’s close method like this:
+
+Change your function to:
+
+js
+Copy
+Edit
+function fillRecordProducer() {
+  var virtualPort = document.getElementById("virtual_port").value;
+  var healthMonitor = document.getElementById("health_monitor").value;
+  var persistence = document.getElementById("persistence").value;
+
+  // Basic validation example
+  if (!virtualPort) {
+    alert("Virtual Port is required");
+    return;
+  }
+
+  window.parent.g_form.setValue('virtual_port', virtualPort);
+  window.parent.g_form.setValue('health_monitor', healthMonitor);
+  window.parent.g_form.setValue('persistence', persistence);
+
+  // Close the modal properly
+  if (window.parent.GlideModal) {
+    var modals = window.parent.document.querySelectorAll('.glide_modal');
+    modals.forEach(function(modal) {
+      if (modal.style.display !== 'none') {
+        var glideModal = window.parent.GlideModal.getModal(modal);
+        if (glideModal) glideModal.destroy();
+      }
+    });
+  } else {
+    // fallback: try old jQuery close
+    window.parent.$j("#dialog_f5_form").dialog("close");
+  }
+}
+

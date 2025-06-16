@@ -1,0 +1,49 @@
+<g2:ui_page>
+  <j:set var="title" value="F5 Configuration" />
+
+  <div style="padding: 20px;">
+    <label for="portInput">Port:</label>
+    <input type="text" id="portInput" placeholder="Enter Port" />
+
+    <br /><br />
+
+    <label for="healthMonitor">Health Monitor:</label>
+    <select id="healthMonitor">
+      <option value="">-- Select --</option>
+      <option value="tcp">TCP</option>
+      <option value="ping">Ping</option>
+    </select>
+  </div>
+
+  <!-- ✅ JavaScript to attach listeners -->
+  <script>
+    // Run immediately after modal content loads
+    (function attachListeners() {
+      const portInput = document.getElementById('portInput');
+      const healthMonitor = document.getElementById('healthMonitor');
+
+      if (!portInput || !healthMonitor) {
+        console.error('Modal inputs not found!');
+        return;
+      }
+
+      // Example listener
+      portInput.addEventListener('input', function () {
+        console.log('Port changed to: ', this.value);
+
+        // Show/hide healthMonitor as an example
+        if (this.value === '443') {
+          healthMonitor.style.display = 'inline-block';
+        } else {
+          healthMonitor.style.display = 'none';
+        }
+      });
+
+      // Example dropdown listener
+      healthMonitor.addEventListener('change', function () {
+        console.log('Monitor selected: ', this.value);
+      });
+    })();
+  </script>
+</g2:ui_page>
+

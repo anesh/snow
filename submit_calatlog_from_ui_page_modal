@@ -1,0 +1,21 @@
+On your UI Page modal, send a message like:
+<script>
+  function requestParentFormSubmit() {
+    window.parent.postMessage({ action: "submit_catalog_form" }, "*");
+    window.close(); // Optional
+  }
+</script>
+
+<button onclick="requestParentFormSubmit()">Submit Request</button>
+
+On the Parent Catalog Item (via Catalog Client Script):
+
+onLoad
+
+window.addEventListener("message", function(event) {
+  if (event.data && event.data.action === "submit_catalog_form") {
+    g_form.submit();
+  }
+});
+
+

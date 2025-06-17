@@ -1,0 +1,63 @@
+<g:ui_page>
+<html>
+<head>
+  <script>
+    function saveDataToServer() {
+      var port = document.getElementById("virtual_port").value;
+
+      var ga = new GlideAjax('F5FormSubmitAjax');
+      ga.addParam('sysparm_name', 'savePort');
+      ga.addParam('sysparm_virtual_port', port);
+      ga.getXML(function(response) {
+        var answer = response.responseXML.documentElement.getAttribute("answer");
+
+        if (answer === "success") {
+          // Instead of trying to close just the modal, redirect the whole top window
+          window.top.location.href = '/u_f5_config_list.do';
+        } else {
+          alert("Error saving data");
+        }
+      });
+    }
+  </script>
+</head>
+<body>
+  <div>
+    <label>Virtual Port</label>
+    <input id="virtual_port" type="text" />
+    <button onclick="saveDataToServer()">Save and Go to List</button>
+  </div>
+</body>
+</html>
+</g:ui_page>
+
+
+
+// Accessible from UI Pages
+var F5FormSubmitAjax = Class.create();
+F5FormSubmitAjax.prototype = Object.extendsObject(AbstractAjaxProcessor, {
+  savePort: function() {
+    var port = this.getParameter('sysparm_virtual_port');
+
+    var gr = new GlideRecord('u_f5_config');
+    gr.initialize();
+    gr.u_virtual_port = port;
+    gr.insert();
+
+    return 'success';
+  }
+});
+
+
+var item = new GlideRecord('sc_cart_item');
+if (item.get(current.sys_id)) {
+  item.u_auto_submit_flag = true;
+  item.update();
+}
+
+
+// onChange of auto_submit_flag
+if (g_form.getValue('auto_submit_flag') == 'true') {
+  g_form.submit();
+}
+

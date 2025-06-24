@@ -1,0 +1,57 @@
+var inputIp = '1.1.1.100';  // Example input IP
+var inputIpInt = ipToInt(inputIp);
+
+// Convert IP to integer
+function ipToInt(ip) {
+    var parts = ip.split('.');
+    return (parseInt(parts[0]) << 24) |
+           (parseInt(parts[1]) << 16) |
+           (parseInt(parts[2]) << 8) |
+           parseInt(parts[3]);
+}
+
+// Get subnet start and end IP from CIDR
+function getSubnetRange(cidr) {
+    var parts = cidr.split('/');
+    if (parts.length !== 2) return null;
+
+    var baseIp = parts[0];
+    var maskLength = parseInt(parts[1]);
+    var ipInt = ipToInt(baseIp);
+    var mask = -1 << (32 - maskLength);
+    var networkStart = ipInt & mask;
+    var networkEnd = networkStart | ~mask;
+
+    return {
+        start: networkStart >>> 0,
+        end: networkEnd >>> 0,
+        cidr: cidr
+    };
+}
+
+// Query the subnet table
+var gr = new GlideRecord('cmdb_ci_ip_subnet');
+gr.query();
+
+var matchFound = false;
+
+while (gr.next()) {
+    var rawField = gr.getValue('name'); // Example: "1.1.1.0/24-IHS,2.2.0.0/16-APP"
+    var subnetEntries = rawField.split(',');
+
+    for (var i = 0; i < subnetEntries.length; i++) {
+        var entry = subnetEntries[i].trim();  // e.g. "1.1.1.0/24-IHS"
+        var cidrPart = entry.split('-')[0];   // extract just "1.1.1.0/24"
+
+        var range = getSubnetRange(cidrPart);
+        if (range && inputIpInt >= range.start && inputIpInt <= range.end) {
+            gs.print('✅ IP ' + inputIp + ' is within subnet ' + cidrPart + ' (' + entry + ')');
+            matchFound = true;
+        }
+    }
+}
+
+if (!matchFound) {
+    gs.print('❌ IP ' + inputIp + ' did not match any defined subnet ranges.');
+}
+

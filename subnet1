@@ -1,0 +1,61 @@
+var inputIp = '2.2.2.100';
+var inputIpInt = ipToInt(inputIp);
+
+function ipToInt(ip) {
+    var parts = ip.split('.');
+    return (parseInt(parts[0]) << 24) |
+           (parseInt(parts[1]) << 16) |
+           (parseInt(parts[2]) << 8) |
+           parseInt(parts[3]);
+}
+
+function getSubnetRange(cidr) {
+    var parts = cidr.split('/');
+    if (parts.length !== 2) return null;
+
+    var baseIp = parts[0];
+    var maskLength = parseInt(parts[1]);
+    var ipInt = ipToInt(baseIp);
+    var mask = -1 << (32 - maskLength);
+    var networkStart = ipInt & mask;
+    var networkEnd = networkStart | ~mask;
+
+    return {
+        start: networkStart >>> 0,
+        end: networkEnd >>> 0,
+        cidr: cidr
+    };
+}
+
+var gr = new GlideRecord('cmdb_ci_ip_subnet');
+gr.query();
+
+var matchFound = false;
+
+while (gr.next()) {
+    var raw = gr.getValue('name');  // e.g., '["1.1.1.0/24-IHS", "2.2.2.0/16-APP"]'
+    
+    if (!raw || raw.trim() === '') continue;
+
+    // ✅ Strip brackets and parse manually
+    raw = raw.replace(/[\[\]"]+/g, ''); // Remove [, ], and " characters
+    var entries = raw.split(',');
+
+    for (var i = 0; i < entries.length; i++) {
+        var entry = entries[i].trim(); // e.g., 2.2.2.0/16-APP
+        if (!entry.includes('/')) continue;
+
+        var cidr = entry.split('-')[0].trim();  // just the CIDR part
+
+        var range = getSubnetRange(cidr);
+        if (range && inputIpInt >= range.start && inputIpInt <= range.end) {
+            gs.print('✅ IP ' + inputIp + ' is within subnet: ' + entry);
+            matchFound = true;
+        }
+    }
+}
+
+if (!matchFound) {
+    gs.print('❌ IP ' + inputIp + ' not found in any subnet.');
+}
+

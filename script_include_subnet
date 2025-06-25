@@ -1,0 +1,83 @@
+var CheckExternalIP = Class.create();
+CheckExternalIP.prototype = Object.extendsObject(AbstractAjaxProcessor, {
+    validateAppIP: function() {
+        var appId = this.getParameter('sysparm_app_id');
+        if (!appId) return JSON.stringify({ matched: false });
+
+        // Lookup external table
+        var appGr = new GlideRecord('u_application_ci');
+        appGr.addQuery('u_app_id', appId);
+        appGr.query();
+
+        if (!appGr.next() || !appGr.u_ip_address)
+            return JSON.stringify({ matched: false });
+
+        var ip = appGr.u_ip_address.toString();
+        var inputIpInt = this._ipToInt(ip);
+        var matched = false;
+
+        var subnetGr = new GlideRecord('cmdb_ci_ip_subnet');
+        subnetGr.query();
+
+        while (subnetGr.next()) {
+            var raw = subnetGr.getValue('name');
+            if (!raw) continue;
+
+            raw = raw.replace(/[\[\]"]+/g, '');
+            var entries = raw.split(',');
+
+            for (var i = 0; i < entries.length; i++) {
+                var cidr = entries[i].split('-')[0].trim();
+                var range = this._getSubnetRange(cidr);
+                if (range && inputIpInt >= range.start && inputIpInt <= range.end) {
+                    matched = true;
+                    break;
+                }
+            }
+            if (matched) break;
+        }
+
+        return JSON.stringify({ matched: matched, ip: ip });
+    },
+
+    _ipToInt: function(ip) {
+        var parts = ip.split('.');
+        return ((parts[0] << 24 >>> 0) | (parts[1] << 16) | (parts[2] << 8) | parts[3]) >>> 0;
+    },
+
+    _getSubnetRange: function(cidr) {
+        var parts = cidr.split('/');
+        if (parts.length !== 2) return null;
+
+        var ipInt = this._ipToInt(parts[0]);
+        var mask = (0xFFFFFFFF << (32 - parseInt(parts[1]))) >>> 0;
+        var start = ipInt & mask;
+        var end = start | (~mask >>> 0);
+        return { start: start >>> 0, end: end >>> 0 };
+    },
+
+    type: 'CheckExternalIP'
+});
+
+
+function onLoad() {
+    var appId = g_form.getValue('u_application_id');
+    if (!appId) return;
+
+    var ga = new GlideAjax('CheckExternalIP');
+    ga.addParam('sysparm_name', 'validateAppIP');
+    ga.addParam('sysparm_app_id', appId);
+
+    ga.getXMLAnswer(function(response) {
+        var result = JSON.parse(response.responseXML.documentElement.getAttribute("answer"));
+        
+        if (result.matched) {
+            g_form.showFieldMsg('u_application_id', '✅ IP ' + result.ip + ' is in a valid subnet.', 'info');
+            g_form.setVisible('my_ui_action', true);
+        } else {
+            g_form.showFieldMsg('u_application_id', '❌ IP is not authorized or not found.', 'error');
+            g_form.setVisible('my_ui_action', false);
+        }
+    });
+}
+

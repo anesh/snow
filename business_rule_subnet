@@ -1,0 +1,61 @@
+(function executeRule(current, gsn) {
+    var ip = current.u_input_ip + '';
+    if (!ip) {
+        current.u_ip_matched = false;
+        return;
+    }
+
+    var inputIpInt = ipToInt(ip);
+    var matched = false;
+
+    var gr = new GlideRecord('cmdb_ci_ip_subnet');
+    gr.addNotNullQuery('name');
+    gr.query();
+
+    while (gr.next()) {
+        var raw = gr.getValue('name');
+        if (!raw || raw.trim() === '') continue;
+
+        raw = raw.replace(/[\[\]"]+/g, '');
+        var entries = raw.split(',');
+
+        for (var i = 0; i < entries.length; i++) {
+            var entry = entries[i].trim();
+            var cidr = entry.split('-')[0].trim();
+
+            var range = getSubnetRange(cidr);
+            if (range && inputIpInt >= range.start && inputIpInt <= range.end) {
+                matched = true;
+                break;
+            }
+        }
+
+        if (matched) break;
+    }
+
+    current.u_ip_matched = matched;
+
+    function ipToInt(ip) {
+        var parts = ip.split('.');
+        return (
+            (parseInt(parts[0]) << 24 >>> 0) |
+            (parseInt(parts[1]) << 16 >>> 0) |
+            (parseInt(parts[2]) << 8 >>> 0) |
+            (parseInt(parts[3]) >>> 0)
+        ) >>> 0;
+    }
+
+    function getSubnetRange(cidr) {
+        var parts = cidr.split('/');
+        if (parts.length !== 2) return null;
+
+        var baseIp = parts[0];
+        var bits = parseInt(parts[1]);
+        var ipInt = ipToInt(baseIp);
+        var mask = (0xFFFFFFFF << (32 - bits)) >>> 0;
+        var start = ipInt & mask;
+        var end = start | (~mask >>> 0);
+        return { start: start >>> 0, end: end >>> 0 };
+    }
+})(current, gs);
+

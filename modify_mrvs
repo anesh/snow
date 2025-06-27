@@ -1,0 +1,49 @@
+function onChange(control, oldValue, newValue, isLoading) {
+  if (isLoading || !newValue) return;
+
+  // Optional: Only run if user selected "Modify"
+  var mode = g_form.getValue('u_request_type');
+  if (mode.toLowerCase() !== 'modify') return;
+
+  var ga = new GlideAjax('GetFullF5ConfigByFQDN');
+  ga.addParam('sysparm_name', 'getFullConfig');
+  ga.addParam('sysparm_fqdn', newValue);
+
+  ga.getXMLAnswer(function(response) {
+    try {
+      var result = JSON.parse(response);
+
+      if (result.error) {
+        g_form.showFieldMsg('u_fqdn', result.error, 'error');
+        return;
+      }
+
+      // ✅ Set standard fields
+      for (var field in result.config) {
+        if (g_form.getControl(field)) {
+          g_form.setValue(field, result.config[field]);
+        }
+      }
+
+      // ✅ Populate MRVS: pool_members
+      if (result.pool_members && result.pool_members.length > 0) {
+        var newMRVSData = [];
+
+        result.pool_members.forEach(function(member) {
+          newMRVSData.push({
+            member_ip: member.member_ip,
+            member_port: member.member_port,
+            priority: member.priority
+          });
+        });
+
+        g_form.setValue('pool_members', JSON.stringify(newMRVSData));
+      }
+
+    } catch (e) {
+      console.error("Failed to process FQDN data:", e);
+      g_form.showFieldMsg('u_fqdn', 'Error processing configuration data.', 'error');
+    }
+  });
+}
+

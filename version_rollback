@@ -1,0 +1,100 @@
+| Component                                                 | Purpose                                |
+| --------------------------------------------------------- | -------------------------------------- |
+| `u_f5_load_balancer_config`                               | Main config table with version support |
+| `u_version_number` (Integer)                              | To track version                       |
+| `u_active` (Boolean)                                      | To identify the current version        |
+| Related `u_f5_pool_member` records                        | Linked to each config version          |
+| Logic to auto-increment version + deactivate previous one |                                        |
+
+
+ 1. Add Versioning Fields to Your Config Table
+| Field Name                         | Type                             | Notes                                   |
+| ---------------------------------- | -------------------------------- | --------------------------------------- |
+| `fqdn`                             | String                           | Must remain consistent across versions  |
+| `u_version_number`                 | Integer                          | Auto-increment per FQDN                 |
+| `u_active`                         | Boolean                          | Only 1 record per FQDN should be active |
+| `sys_created_by`, `sys_created_on` | (default fields) for audit trail |                                         |
+
+ 2. Business Rule: Increment Version & Deactivate Previous
+
+Name: Set F5 Config Version
+Table: u_f5_load_balancer_config
+
+When: before insert
+
+Condition: true
+
+(function executeRule(current, previous /*null when async*/) {
+  // Get the latest version for this FQDN
+  var latest = new GlideRecord('u_f5_load_balancer_config');
+  latest.addQuery('fqdn', current.fqdn);
+  latest.orderByDesc('u_version_number');
+  latest.setLimit(1);
+  latest.query();
+
+  if (latest.next()) {
+    // Deactivate the previous version
+    latest.u_active = false;
+    latest.update();
+
+    // Set next version number
+    current.u_version_number = parseInt(latest.u_version_number, 10) + 1;
+  } else {
+    current.u_version_number = 1; // First version
+  }
+
+  current.u_active = true; // This is the new active version
+})();
+
+✅ Now every time a config is created for an FQDN, it gets a version number, and the previous one is deactivated.
+
+ 3. When Retrieving a Config by FQDN
+
+Update your Script Include (GetF5ConfigByFQDN) to always return the active version:
+gr.addQuery('fqdn', fqdn);
+gr.addQuery('u_active', true);
+gr.setLimit(1);
+gr.query();
+
+ 4. Track and View History
+Create a related list view for u_f5_load_balancer_config filtered by fqdn
+
+You’ll see version 1, 2, 3, etc., with timestamps and u_active status
+
+5. Optional: Rollback Feature
+To allow rollback via a UI Action:
+
+Add a UI Action called “Rollback to this Version”
+
+It:
+
+Deactivates the current active version
+
+Duplicates the selected version as a new row with u_version_number = N+1
+
+Sets u_active = true
+
+var rollbackFrom = new GlideRecord('u_f5_load_balancer_config');
+if (rollbackFrom.get('<sys_id>')) {
+  // Deactivate current
+  var active = new GlideRecord('u_f5_load_balancer_config');
+  active.addQuery('fqdn', rollbackFrom.fqdn);
+  active.addQuery('u_active', true);
+  active.query();
+  while (active.next()) {
+    active.u_active = false;
+    active.update();
+  }
+
+  // Clone the rollbackFrom record
+  var newVersion = rollbackFrom;
+  newVersion = newVersion.copy(); // new GlideRecord instance
+  newVersion.u_active = true;
+  newVersion.u_version_number = parseInt(rollbackFrom.u_version_number, 10) + 1;
+  newVersion.insert();
+
+  gs.info("Rolled back to version: " + rollbackFrom.u_version_number);
+}
+
+
+

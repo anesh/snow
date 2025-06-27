@@ -1,0 +1,89 @@
+var GetFullF5ConfigByFQDN = Class.create();
+GetFullF5ConfigByFQDN.prototype = Object.extendsObject(AbstractAjaxProcessor, {
+  getFullConfig: function() {
+    var fqdn = this.getParameter('sysparm_fqdn');
+    if (!fqdn) return JSON.stringify({ error: 'FQDN is required' });
+
+    var result = {
+      config: {},
+      pool_members: []
+    };
+
+    var configGr = new GlideRecord('u_f5_load_balancer_config');
+    configGr.addQuery('fqdn', fqdn);
+    configGr.addQuery('u_active', true); // Only fetch active version
+    configGr.query();
+
+    if (!configGr.next()) {
+      return JSON.stringify({ error: 'No active configuration found for FQDN: ' + fqdn });
+    }
+
+    // ✅ Get all fields dynamically from the config table
+    var configFields = configGr.getFields();
+    for (var i = 0; i < configFields.size(); i++) {
+      var fieldName = configFields.get(i).getName();
+      result.config[fieldName] = configGr.getValue(fieldName);
+    }
+
+    // ✅ Get pool member MRVS records
+    var pmGr = new GlideRecord('u_f5_pool_member');
+    pmGr.addQuery('u_f5_config', configGr.getUniqueValue());
+    pmGr.query();
+    while (pmGr.next()) {
+      var memberRow = {};
+      var pmFields = pmGr.getFields();
+      for (var j = 0; j < pmFields.size(); j++) {
+        var pmField = pmFields.get(j).getName();
+        memberRow[pmField] = pmGr.getValue(pmField);
+      }
+      result.pool_members.push(memberRow);
+    }
+
+    return JSON.stringify(result);
+  },
+
+  type: 'GetFullF5ConfigByFQDN'
+});
+
+Catalog client
+function onChange(control, oldValue, newValue, isLoading) {
+  if (isLoading || !newValue) return;
+
+  var ga = new GlideAjax('GetFullF5ConfigByFQDN');
+  ga.addParam('sysparm_name', 'getFullConfig');
+  ga.addParam('sysparm_fqdn', newValue);
+
+  ga.getXMLAnswer(function(response) {
+    var data = JSON.parse(response);
+
+    if (data.error) {
+      g_form.showFieldMsg('u_fqdn', data.error, 'error');
+      return;
+    }
+
+    // ✅ Set values from config
+    for (var field in data.config) {
+      if (g_form.getControl(field)) {
+        g_form.setValue(field, data.config[field]);
+      }
+    }
+
+    // ✅ Populate MRVS (Multi-Row Variable Set)
+    if (typeof GlideMultiRowVariableSet !== 'undefined') {
+      var mrvs = new GlideMultiRowVariableSet('pool_members');
+      mrvs.clear();
+
+      data.pool_members.forEach(function(member) {
+        var row = mrvs.addRow();
+        if ('u_member_ip' in member) row.setValue('member_ip', member.u_member_ip);
+        if ('u_member_port' in member) row.setValue('member_port', member.u_member_port);
+        if ('u_priority' in member) row.setValue('priority', member.u_priority);
+      });
+
+      mrvs.render();
+    } else {
+      console.warn('GlideMultiRowVariableSet is not available');
+    }
+  });
+}
+

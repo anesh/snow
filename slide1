@@ -1,0 +1,19 @@
+📄 Standard Change Creation (Create Only)
+Slide Title:
+Standard Change Creation (Create Only)
+
+Bullet Points:
+
+Standard Change is automatically created only for 'Create' mode requests
+
+Triggered after the successful submission of a new configuration request
+
+The Standard Change is linked to the same Request Item (RITM) that created the F5 configuration
+
+Includes metadata such as FQDN, environment, VIP, port, and submitter
+
+Enables automated change tracking and compliance with CAB processes
+
+Not triggered during 'Modify' or 'Rollback' workflows — those rely on existing change records or audit trail
+
+Enhances traceability and change audit compliance without manual intervention

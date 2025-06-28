@@ -1,0 +1,16 @@
+Slide Title:
+Ansible Integration for F5 Configuration Deployment
+
+Bullet Points:
+
+After approval and standard change creation, ServiceNow triggers Ansible playbooks to push F5 configuration changes
+
+Integration is done via REST API
+
+Submitted config data (VIP, pool, monitor, persistence) is converted to YAML
+
+Execution status is reported back to ServiceNow and logged in the request or task record
+
+Errors or failures are captured and trigger follow-up tasks
+
+Enables zero-touch, auditable network automation from a ServiceNow

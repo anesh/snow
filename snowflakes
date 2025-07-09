@@ -1,0 +1,91 @@
+✅ Objective
+Let users upload a JSON or YAML config file (e.g. AS3 declaration), then:
+
+Parse the file
+
+Extract relevant F5 config
+
+Store it in your config table (u_f5_config or equivalent)
+
+Do this without adding more catalog variables (except the file field)
+
+✅ Step-by-Step Integration
+🔹 Step 1: Add File Upload Variable to the Catalog Item
+Open your catalog item (record producer or catalog item)
+
+Add a new variable:
+
+Type: Attachment
+
+Name: u_f5_config_file
+
+Question: Upload F5 Config (JSON/YAML)
+
+Make this variable mandatory
+
+✅ That’s it for the UI — no other new fields are required.
+
+🔹 Step 3: Add a Catalog Business Rule to Process the File After Submission
+This runs server-side after the file is uploaded and the RITM is created.
+
+Example: Parse F5 Config File on sc_req_item
+javascript
+Copy
+Edit
+(function executeRule(current, gReason, gUser, gSNC) {
+  var reqItem = current; // sc_req_item
+
+  // Get the uploaded attachment
+  var attachmentGR = new GlideRecord("sys_attachment");
+  attachmentGR.addQuery("table_name", "sc_req_item");
+  attachmentGR.addQuery("table_sys_id", current.sys_id);
+  attachmentGR.query();
+
+  while (attachmentGR.next()) {
+    var fileContent = getAttachmentText(attachmentGR.sys_id);
+
+    try {
+      var configData;
+
+      if (attachmentGR.file_name.endsWith(".json")) {
+        configData = JSON.parse(fileContent);
+      } else if (attachmentGR.file_name.endsWith(".yaml") || attachmentGR.file_name.endsWith(".yml")) {
+        configData = new global.YAMLProcessor().parse(fileContent);
+      } else {
+        continue;
+      }
+
+      // Extract relevant fields and create a record in u_f5_config
+      var f5 = new GlideRecord("u_f5_config");
+      f5.initialize();
+      f5.u_fqdn = configData.fqdn || "unknown.acme.com";
+      f5.u_virtual_ip = configData.vip || configData.virtual_ip;
+      f5.u_raw_config_json = JSON.stringify(configData);
+      f5.u_version_number = 1;
+      f5.u_is_latest = true;
+      f5.insert();
+
+    } catch (e) {
+      gs.error("Failed to process F5 config: " + e);
+    }
+  }
+
+  function getAttachmentText(sysId) {
+    var sa = new GlideSysAttachment();
+    var stream = sa.getContentStream(sysId);
+    var scanner = new java.util.Scanner(stream).useDelimiter("\\A");
+    return scanner.hasNext() ? scanner.next() : "";
+  }
+
+})(current, gReason, gUser, gSNC);
+✅ This script:
+
+Looks for a .json or .yaml file
+
+Parses it using JSON or YAML processor
+
+Stores the config in your custom table
+
+Saves the raw config too (for versioning/audits)
+
+

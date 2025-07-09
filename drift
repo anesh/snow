@@ -1,0 +1,80 @@
+Goal
+You want to:
+
+Avoid storing F5 configs as a single JSON blob
+
+Store and compare each config component in separate fields or tables
+
+Enable clean delta comparison between ServiceNow (u_f5_config) and actual F5 state (e.g., from Ansible or F5 iControl API)
+
+
+Recommended Data Model (Normalized, Not Serialized)
+🔹 1. u_f5_config – Desired State (One record per version)
+Field	Notes
+u_fqdn	VIP DNS name
+u_virtual_ip	Virtual Server IP
+u_virtual_port	Port
+u_health_monitor	Monitor name/profile
+u_persistence_profile	Profile name
+u_env_type	Env tag (e.g., prod, test)
+u_is_latest	true for latest version
+u_version_number	Incremented on each modify/rollback
+
+🔹 2. u_f5_pool_member – Desired Pool Members (Child Table)
+Field	Notes
+u_f5_config	Reference to u_f5_config (parent)
+u_site_type	primary or secondary
+u_member_ip	IP address of pool member
+u_member_port	Port of pool member
+u_priority	Optional priority or weight
+
+🔹 3. u_f5_actual_config & u_f5_actual_pool_member
+Mirror the above structure but store the actual state from F5 in separate tables.
+
+Delta Detection Logic (Without JSON)
+📦 Use a Script Include or Flow to:
+Load the latest u_f5_config for a given FQDN
+
+Load the latest u_f5_actual_config
+
+Compare each individual field:
+
+u_virtual_ip, u_virtual_port, u_health_monitor, etc.
+
+Compare pool members by matching on ip + port
+
+Example: Pool Member Drift Detection
+javascript
+Copy
+Edit
+var desired = new GlideRecord('u_f5_pool_member');
+desired.addQuery('u_f5_config', desiredConfigSysId);
+desired.query();
+
+var actual = new GlideRecord('u_f5_actual_pool_member');
+actual.addQuery('u_fqdn', fqdn);
+actual.query();
+
+var desiredSet = {};
+while (desired.next()) {
+  var key = desired.u_member_ip + ':' + desired.u_member_port;
+  desiredSet[key] = true;
+}
+
+while (actual.next()) {
+  var key = actual.u_member_ip + ':' + actual.u_member_port;
+  if (!desiredSet[key]) {
+    // Drift found: extra member exists in F5
+    logDrift('extra_pool_member', actual, null);
+  } else {
+    // Member exists and is expected
+    delete desiredSet[key];
+  }
+}
+
+// Remaining keys in desiredSet are missing from actual
+for (var missing in desiredSet) {
+  logDrift('missing_pool_member', null, missing);
+}
+
+

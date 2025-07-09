@@ -1,0 +1,199 @@
+LinkedIn Marketing Post (Launch Announcement)
+🚀 Now Live: F5 Load Balancer Automation for ServiceNow
+
+Managing F5 configurations manually? Updating pool members by email or Slack?
+
+We just launched SN-F5 Automator — a fully integrated ServiceNow solution to:
+
+✅ Provision F5 VIPs and pools via a Service Catalog
+✅ Modify existing configs by FQDN lookup
+✅ Auto-create Standard Changes for approvals
+✅ Version every config with rollback support
+✅ Trigger deployments via Ansible Tower or AAP
+
+🔐 Built with auditability, enterprise scale, and minimal operational friction in mind.
+
+🎯 Ideal for:
+
+Network teams managing app onboarding
+
+ServiceNow architects looking to extend automation
+
+Platform teams rolling out self-service load balancing
+
+🛠️ Works with both Classic UI and Service Portal
+📄 Deployment guide + support included
+
+➡️ Book a live demo here: [your calendly/demo URL]
+
+#ServiceNow #F5Networks #Automation #DevOps #InfraOps #SelfService #NetworkAutomation #Ansible #DigitalTransformation #SNF5Automator
+==============
+LinkedIn DM: Lead Follow-up
+Hi [First Name],
+
+Thanks for checking out our post on F5 Load Balancer Automation for ServiceNow — glad it caught your attention.
+
+We’ve helped teams automate everything from F5 VIP provisioning to rollback and Ansible-based deployment — all from the ServiceNow catalog, with built-in versioning and change control.
+
+If this is something your team could benefit from, I’d be happy to show you a quick 15-min demo or share more details.
+
+Would that be useful to you or someone on your infra/platform team?
+
+Cheers,
+[Your Name]
+
+==================
+Variant (If They Liked the Post but Didn't Comment)
+Hi [First Name],
+
+Noticed you liked our post on SN-F5 Automator. We’re helping teams move from ticket-based F5 changes to fully automated workflows in ServiceNow.
+
+Happy to share a live walkthrough or answer any questions if that’s relevant to your roadmap.
+
+Open to a quick chat?
+=========================
+
+Did you know you can fully version F5 VIP configurations using just ServiceNow + a few client scripts?
+We used GlideModal + Script Include + MRVS to create an editable, rollback-friendly VIP config workflow.
+#SNDev #NetworkAutomation #ServiceNow
+
+Most teams update F5 load balancers manually.
+But with the right ServiceNow form, they can create or modify configs self-service — with approval, rollback, and audit.
+Here’s what we learned implementing it.
+
+What if modifying a load balancer config was just filling out a ServiceNow form?
+That’s how we simplified F5 changes for app teams and still enforced governance.
+
+GlideModal in ServiceNow is underrated.
+We used it to create a modal editor for F5 pool members with dynamic row editing, validation, and rollback.
+Ask me how we handled version control on submission.
+
+We recently helped a team build F5 automation into ServiceNow.
+The trickiest part? Versioning and MRVS updates — especially when loading data for Modify mode.
+Here’s how we overcame it 👇
+
+Client script tip:
+You can populate multiple Multi-Row Variable Sets in ServiceNow from a single GlideAjax response — great for complex config UIs like F5 or firewall rules.
+
+Rollback isn’t just for code.
+It applies to infrastructure configs too.
+We version every F5 config change, so rollback is a button click — and linked to the request that made it.
+This makes CAB reviews much easier.
+
+Ansible + ServiceNow works beautifully.
+We use Flow Designer to call an Ansible job template right after F5 form submission — clean, auditable deployment pipeline.
+
+Want to make a dynamic config editor in ServiceNow?
+Use a UI Macro to trigger a GlideModal → UI Page → Client Script → Script Include loop.
+That’s how we enabled FQDN-based config lookup for F5 automation.
+
+Standard Change creation doesn’t have to be manual.
+We trigger it automatically on ServiceNow form submission — but only for 'Create' mode.
+Modify uses version diffing instead.
+
+How do you manage audit for infrastructure changes?
+We version every config, link it to the RITM, and provide rollback in the same UI.
+No extra tools needed — just the ServiceNow platform.
+
+Good UX matters — even in internal tools.
+Our ServiceNow config form for F5 has dropdowns, field dependencies, validation, and loading spinners.
+It’s fast and safe.
+
+Tip for multi-site load balancers:
+Use a single table and differentiate primary vs secondary members via a site_type field.
+Makes MRVS mapping in ServiceNow much easier.
+
+Don’t skip versioning.
+We learned the hard way: if configs can change outside of CAB, you need a snapshot per version — not just sys_updated_on.
+
+One small win:
+Using g_form.getValue() with JSON-encoded MRVS lets us restore multiple member sets in one call.
+Perfect for rollback and Modify mode.
+
+Lessons from automating F5 with ServiceNow:
+
+MRVS fields aren't easy to manipulate
+
+GlideModal is your best friend
+
+You don’t need mid servers for everything
+
+Users care about rollback more than they think
+
+ServiceNow isn’t just for tickets.
+We use it to manage real-time infrastructure: load balancer configs, deployment metadata, and rollback automation — all without custom portals.
+
+Trying to balance speed + control?
+We let teams self-service F5 changes — but every change creates a version and optionally a change request.
+No more shadow IT, no more delays.
+
+Infra automation works better with approvals.
+We automatically create standard changes in ServiceNow when a new F5 config is created.
+Modify uses version rollback logic instead.
+
+MRVS isn’t friendly to incremental updates.
+But with GlideAjax and full JSON rewrites, you can simulate dynamic row editing with full control.
+That’s how we handled primary and secondary pool members in one workflow.
+
+========================
+🚀 Automate F5 Load Balancer provisioning using ServiceNow
+Tired of tracking VIPs via tickets and emails? Here's what you get:
+
+• Create/modify configs using a dynamic catalog form  
+• Auto-populate based on FQDN lookups  
+• Version every change with rollback support  
+• Push to F5 via Ansible Tower or AAP  
+• Auto-generate standard change for "Create" flows  
+• Built with MRVS, GlideModal, and audit compliance
+
+#ServiceNow #F5 #Automation #SNF5Automator
+
+✅ Modernize your F5 Configuration Process
+What we built for one customer (and now offer to all):
+
+• Catalog-based F5 VIP creation in ServiceNow  
+• Modify existing configs using dynamic GlideModal forms  
+• MRVS-driven pool member entry (Primary + Secondary)  
+• Version-controlled changes stored for rollback  
+• REST-based Ansible integration for F5 BIG-IP  
+• Standard Change generation only on new deployment
+
+#SNDev #NetworkOps #InfraAutomation
+
+🛠 Platform teams, this one’s for you:
+We built an F5 automation layer on top of ServiceNow. Why it matters:
+
+• Eliminates manual load balancer tickets  
+• Gives users a safe self-service form  
+• Ensures rollback and audit on every change  
+• Integrates with Flow Designer + Ansible jobs  
+• Works with Classic UI and Service Portal
+
+#ServiceNow #F5Automation #PlatformEngineering
+
+🔥 Build vs Buy? Here's what our F5-ServiceNow automation solves:
+
+• Fast onboarding of app configs via catalog form  
+• Modify existing VIPs using just FQDN  
+• Pool members handled with MRVS and JSON injection  
+• Standard Change automation where needed  
+• Versioning + rollback = risk-free delivery  
+• Ansible Tower triggers included
+
+Ask us for a demo or implementation guide.
+
+#SNF5 #ChangeControl #DevOpsEnablement
+
+📦 SN-F5 Automator Key Capabilities:
+
+• Dynamic F5 form in ServiceNow Catalog  
+• Modify via FQDN auto-lookup (GlideModal powered)  
+• Track & rollback every version change  
+• Create standard changes for audit/approvals  
+• Trigger Ansible playbooks directly from submission  
+• Embed in larger ITSM workflows
+
+Designed for InfraOps, trusted by DevSecOps.
+
+#NetworkAutomation #ServiceNow #SNF5Automator
+

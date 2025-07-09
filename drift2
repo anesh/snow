@@ -1,0 +1,144 @@
+Here's a complete Glide script that compares the desired configuration from u_f5_config and its u_f5_pool_member children against the actual configuration stored in u_f5_actual_config and u_f5_actual_pool_member, and logs any drift into u_f5_drift_log.
+
+✅ Prerequisites
+Ensure these tables exist:
+
+Main Tables
+u_f5_config (desired state)
+
+u_f5_actual_config (actual F5 config)
+
+u_f5_pool_member (desired pool members)
+
+u_f5_actual_pool_member (actual pool members)
+
+u_f5_drift_log (drift tracking log)
+
+✅ Drift Log Table Fields (u_f5_drift_log)
+Field	Type	Purpose
+u_fqdn	String	FQDN of the config
+u_config	Reference (u_f5_config)	Desired config
+u_drift_type	String	e.g., virtual_ip_mismatch, extra_pool_member, missing_pool_member
+u_expected	String	Value from ServiceNow
+u_actual	String	Value from F5
+u_detected_on	DateTime	When drift was detected
+
+Full Glide Script (Background Script / Script Include)
+
+(function() {
+  var fqdn = 'test-vip.acme.com';
+
+  // Get latest desired config
+  var desired = new GlideRecord('u_f5_config');
+  desired.addQuery('u_fqdn', fqdn);
+  desired.addQuery('u_is_latest', true);
+  desired.orderByDesc('u_version_number');
+  desired.setLimit(1);
+  desired.query();
+
+  if (!desired.next()) {
+    gs.info('No desired config found for FQDN: ' + fqdn);
+    return;
+  }
+
+  // Get latest actual config
+  var actual = new GlideRecord('u_f5_actual_config');
+  actual.addQuery('u_fqdn', fqdn);
+  actual.orderByDesc('u_synced_on');
+  actual.setLimit(1);
+  actual.query();
+
+  if (!actual.next()) {
+    gs.info('No actual config found for FQDN: ' + fqdn);
+    return;
+  }
+
+  var drifted = false;
+
+  // ----------- FIELD-LEVEL COMPARISON -----------
+
+  var fieldsToCompare = [
+    { field: 'u_virtual_ip', label: 'virtual_ip' },
+    { field: 'u_virtual_port', label: 'virtual_port' },
+    { field: 'u_health_monitor', label: 'health_monitor' },
+    { field: 'u_persistence_profile', label: 'persistence_profile' }
+  ];
+
+  fieldsToCompare.forEach(function(f) {
+    var expected = desired.getValue(f.field);
+    var found = actual.getValue(f.field);
+
+    if (expected !== found) {
+      drifted = true;
+      logDrift(fqdn, desired.getUniqueValue(), f.label + '_mismatch', expected, found);
+    }
+  });
+
+  // ----------- POOL MEMBER COMPARISON -----------
+
+  var expectedMembers = {};
+  var actualMembers = {};
+
+  // Desired pool members
+  var dpm = new GlideRecord('u_f5_pool_member');
+  dpm.addQuery('u_f5_config', desired.getUniqueValue());
+  dpm.query();
+  while (dpm.next()) {
+    var key = dpm.u_member_ip + ':' + dpm.u_member_port;
+    expectedMembers[key] = dpm.getDisplayValue('u_site_type');
+  }
+
+  // Actual pool members
+  var apm = new GlideRecord('u_f5_actual_pool_member');
+  apm.addQuery('u_fqdn', fqdn);
+  apm.query();
+  while (apm.next()) {
+    var key = apm.u_member_ip + ':' + apm.u_member_port;
+    actualMembers[key] = apm.getDisplayValue('u_site_type');
+  }
+
+  // Detect missing members
+  for (var key in expectedMembers) {
+    if (!(key in actualMembers)) {
+      drifted = true;
+      logDrift(fqdn, desired.getUniqueValue(), 'missing_pool_member', key, 'not found in F5');
+    }
+  }
+
+  // Detect extra members
+  for (var key in actualMembers) {
+    if (!(key in expectedMembers)) {
+      drifted = true;
+      logDrift(fqdn, desired.getUniqueValue(), 'extra_pool_member', 'not expected', key);
+    }
+  }
+
+  if (!drifted) {
+    gs.info('No drift detected for FQDN: ' + fqdn);
+  }
+
+  // ----------- Drift Logger Helper -----------
+
+  function logDrift(fqdn, configId, type, expected, actual) {
+    var drift = new GlideRecord('u_f5_drift_log');
+    drift.initialize();
+    drift.u_fqdn = fqdn;
+    drift.u_config = configId;
+    drift.u_drift_type = type;
+    drift.u_expected = expected;
+    drift.u_actual = actual;
+    drift.u_detected_on = new GlideDateTime();
+    drift.insert();
+
+    gs.info('Drift logged: ' + type + ' → Expected: ' + expected + ', Actual: ' + actual);
+  }
+})();
+
+✅ What This Script Does
+Loads the latest intended config and actual config for an FQDN
+
+Compares fields (virtual_ip, port, monitor, etc.)
+
+Compares pool members by ip:port
+
+Logs differences into u_f5_drift_log for tracking, reporting, and remediation

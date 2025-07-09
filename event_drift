@@ -1,0 +1,12 @@
+https://gist.github.com/tmarfil/cf34b5e534a6e715e2146000f263cf93
+
+Keep track of the generateion counter and update snow table
+when modify task is done from snow
+send generation id to ansible template, make api to query vs and pool and check current
+generation id with one send by snow, if differet, update as out of sync in worknotes
+
+
+https://gist.github.com/tmarfil/cf34b5e534a6e715e2146000f263cf93
+
+cannot use late modifed
+https://my.f5.com/manage/s/article/K000139001

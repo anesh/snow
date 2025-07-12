@@ -1,0 +1,41 @@
+(function executeRule(current, previous /*null when async*/) {
+  // Always assign a version number
+
+  // Get the latest version for this FQDN
+  var latest = new GlideRecord('u_f5_load_balancer_config');
+  latest.addQuery('fqdn', current.fqdn);
+  latest.orderByDesc('u_version_number');
+  latest.setLimit(1);
+  latest.query();
+
+  if (latest.next()) {
+    var nextVersion = parseInt(latest.u_version_number, 10) + 1;
+
+    // Only increment version if current state is Completed
+    if (current.u_state == 'Completed') {
+      current.u_version_number = nextVersion;
+
+      // Deactivate previous active versions
+      var previousActive = new GlideRecord('u_f5_load_balancer_config');
+      previousActive.addQuery('fqdn', current.fqdn);
+      previousActive.addQuery('u_active', true);
+      previousActive.addQuery('sys_id', '!=', current.sys_id);
+      previousActive.query();
+      while (previousActive.next()) {
+        previousActive.u_active = false;
+        previousActive.update();
+      }
+
+      current.u_active = true;
+    } else {
+      // Use same version as latest, but mark not active
+      current.u_version_number = latest.u_version_number;
+      current.u_active = false;
+    }
+  } else {
+    // First version
+    current.u_version_number = 1;
+    current.u_active = current.u_state == 'Completed';
+  }
+})();
+

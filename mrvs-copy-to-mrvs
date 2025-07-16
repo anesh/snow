@@ -1,0 +1,35 @@
+function onChange(control, oldValue, newValue, isLoading) {
+  if (isLoading) return;
+
+  var sourceVar = 'primary_pool_members';
+  var targetVar = 'secondary_pool_members';
+
+  var sourceData = g_form.getValue(sourceVar);
+  if (!sourceData) return;
+
+  try {
+    var sourceRows = JSON.parse(sourceData);
+    var targetRows = [];
+
+    var seenIPs = new Set();
+
+    sourceRows.forEach(function(row) {
+      var ip = row.member_ip ? row.member_ip.trim() : '';
+      if (ip && !seenIPs.has(ip)) {
+        targetRows.push({
+          member_ip: ip,
+          port: row.port || '',
+          priority: row.priority || ''
+        });
+        seenIPs.add(ip);
+      }
+    });
+
+    // Set the new rows into the target MRVS
+    g_form.setValue(targetVar, JSON.stringify(targetRows));
+
+  } catch (e) {
+    console.error("Failed to copy MRVS rows:", e);
+  }
+}
+
